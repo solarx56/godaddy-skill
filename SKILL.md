@@ -1,6 +1,6 @@
 ---
 name: godaddy
-description: Use GoDaddy's current `gddy` CLI to discover and call supported REST or GraphQL APIs, search and register domains, manage account domains, nameservers, DNS, authentication, PATs, environments, and payment setup. Use whenever a task involves GoDaddy APIs, domains, DNS, or account operations; do not use for another registrar unless GoDaddy is explicitly involved.
+description: Work with GoDaddy's gddy CLI, public Domains MCP, REST and GraphQL APIs, domains and DNS, Commerce, Hosting, Email, experimental Platform apps, and Agent Name Service. Discover current commands and contracts, authenticate appropriately, and verify changes. Use for GoDaddy developer and agent workflows.
 metadata: {"openclaw":{"emoji":"🌐"}}
 ---
 
@@ -9,6 +9,8 @@ metadata: {"openclaw":{"emoji":"🌐"}}
 Use GoDaddy's official `gddy` CLI as the source of truth. It discovers the API catalog embedded in the installed release, shows schemas and scopes, handles authentication, and provides safer domain/DNS workflows. Do not rely on remembered endpoint paths or the removed custom wrappers from earlier versions of this skill.
 
 ## Setup
+
+Read `references/agent-platform.md` for MCP setup, official agent installation, Hosting, Email, Platform apps, ANS, and the verified coverage boundaries. This skill provides instructions; installing it alone does not install CLI binaries or register MCP connections.
 
 First check `gddy --version`. If it is absent, ask before installing software, then use GoDaddy's release installer:
 

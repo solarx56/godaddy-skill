@@ -12,14 +12,13 @@ Use GoDaddy's official `gddy` CLI as the source of truth. It discovers the API c
 
 Read `references/agent-platform.md` for MCP setup, official agent installation, Hosting, Email, Platform apps, ANS, and the verified coverage boundaries. This skill provides instructions; installing it alone does not install CLI binaries or register MCP connections.
 
-First check `gddy --version`. If it is absent, ask before installing software, then use GoDaddy's release installer:
+First check `gddy --version`. If absent, use the versioned official release at https://github.com/godaddy/cli/releases/tag/v0.2.12. Select the archive for the user's OS and architecture and download its accompanying `gddy-checksums-sha256.txt` from that same release. Verify the archive's SHA-256 against the exact filename in that checksum file before extracting or executing it. Stop on a mismatch. Inspect archive paths before extracting into a dedicated temporary directory, then install the verified binary into the user's chosen executable directory.
 
 ```bash
-curl -fsSL https://github.com/godaddy/cli/releases/latest/download/install.sh | bash
 gddy --version
 ```
 
-If installed, run `gddy update check` before claiming the CLI lacks a capability. Do not run `gddy update apply` without the user's approval.
+If installed, run `gddy update check` before claiming the CLI lacks a capability. For an upgrade, select a concrete official release and repeat download/checksum verification. Do not execute a mutable remote shell installer or pipe a download to a shell.
 
 ## Discover before acting
 

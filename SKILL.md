@@ -1,6 +1,6 @@
 ---
 name: godaddy
-description: Work with GoDaddy's gddy CLI, public Domains MCP, REST and GraphQL APIs, domains and DNS, Commerce, Hosting, Email, experimental Platform apps, and Agent Name Service. Discover current commands and contracts, authenticate appropriately, and verify changes. Use for GoDaddy developer and agent workflows.
+description: Work with GoDaddy's gddy CLI, public Domains MCP, REST and GraphQL APIs, domains and DNS, Shopping checkout, Commerce, Hosting, Email, Platform apps, and Agent Name Service. Discover current commands and contracts, authenticate appropriately, and verify changes. Use for GoDaddy developer and agent workflows.
 metadata: {"openclaw":{"emoji":"🌐"}}
 ---
 
@@ -12,13 +12,13 @@ Use GoDaddy's official `gddy` CLI as the source of truth. It discovers the API c
 
 Read `references/agent-platform.md` for MCP setup, official agent installation, Hosting, Email, Platform apps, ANS, and the verified coverage boundaries. This skill provides instructions; installing it alone does not install CLI binaries or register MCP connections.
 
-First check `gddy --version`. If absent, use the versioned official release at https://github.com/godaddy/cli/releases/tag/v0.2.12. Select the archive for the user's OS and architecture and download its accompanying `gddy-checksums-sha256.txt` from that same release. Verify the archive's SHA-256 against the exact filename in that checksum file before extracting or executing it. Stop on a mismatch. Inspect archive paths before extracting into a dedicated temporary directory, then install the verified binary into the user's chosen executable directory.
+First check `gddy --version`. If absent, use the versioned official release at https://github.com/godaddy/cli/releases/tag/v0.2.32. Select the archive for the user's OS and architecture and download its accompanying `gddy-checksums-sha256.txt` from that same release. Verify the archive's SHA-256 against the exact filename in that checksum file before extracting or executing it. Stop on a mismatch. Inspect archive paths before extracting into a dedicated temporary directory, then install the verified binary into the user's chosen executable directory.
 
 ```bash
 gddy --version
 ```
 
-If installed, run `gddy update check` before claiming the CLI lacks a capability. For an upgrade, select a concrete official release and repeat download/checksum verification. Do not execute a mutable remote shell installer or pipe a download to a shell.
+If installed, run `gddy update check` before claiming the CLI lacks a capability. To upgrade, `gddy update apply` downloads the latest release and verifies its SHA-256 against the release checksum file before replacing the binary; run it only with the user's approval. Do not execute the mutable `install.sh`/`install.ps1` remote installers or pipe a download to a shell.
 
 ## Discover before acting
 
@@ -48,13 +48,14 @@ Interactive account work uses browser OAuth and scope step-up:
 
 ```bash
 gddy auth status
-gddy auth scopes
-gddy auth login --scope <scope>
+gddy auth scope
+gddy auth scope --non-default
+gddy auth login
 ```
 
-Let `gddy` open the browser when login or additional consent is required. Never ask the user to paste an OAuth token into chat.
+Login grants a product-area scope bundle. Sensitive scopes (domain purchase, nameserver and domain-setting changes, hosting app deletion, database tunnels, shopping checkout and orders) are not granted by default; the first command that needs one opens a consent screen. Let that step-up happen instead of pre-granting with `--scope`. Never ask the user to paste an OAuth token into chat.
 
-For non-interactive automation, use a scoped PAT only when the operation supports it. Generate it at <https://developer.godaddy.com/en/personal-access-token>, then store it with `gddy pat add` or supply it through `GDDY_PAT`. Never print, log, commit, or package credentials. Legacy `sso-key` credentials do not work with Domains v3 and are deprecated.
+For non-interactive automation, use a scoped PAT only when the operation supports it. `gddy pat create` opens the Developer Portal page for the active environment; have the user pipe the token to `gddy pat add --env <env> <label>` on stdin, or supply it through `GDDY_PAT` / `GDDY_PAT_<ENV>`. Per environment, a stored PAT takes precedence over OAuth. Never print, log, commit, or package credentials. Legacy `sso-key` credentials do not work with Domains v3 and are deprecated.
 
 ## Domain workflows
 
@@ -63,9 +64,14 @@ gddy domain list
 gddy domain get example.com
 gddy domain available example.com
 gddy domain suggest "project name"
-gddy domain nameservers set --help
+gddy domain agreement --tld com
+gddy domain nameserver set --help
+gddy domain auto-renew set --help
+gddy domain transfer-lock set --help
 gddy domain operation status <operation-id>
 ```
+
+`nameserver set`, `auto-renew set`, and `transfer-lock set` are asynchronous account mutations: read the domain first, confirm the exact change, then poll `domain operation status` and re-read. Treat `transfer-lock set --disable` as security-sensitive and confirm the user intends to allow an outbound transfer. Internationalized names are accepted; pass `--punycode` to see ASCII forms.
 
 Domain registration is always quote → review → explicit confirmation → purchase:
 
@@ -75,7 +81,7 @@ gddy domain quote example.com
 gddy domain purchase --quote-token <token> --agree --confirm
 ```
 
-Quoting is free. Before purchase, show the exact domain, price, currency, period, renewal price, settings, quote expiry, and required agreements. The final call charges the account and is irreversible; run it only after the user explicitly approves that exact quote. Quote and purchase must run on the same machine while the token is valid.
+Quoting is free. Before purchase, show the exact domain, price (including any premium fee), currency, period, renewal price, settings, quote expiry, and each required agreement's title and link. State that taxes and fees such as the ICANN fee are added on top, so the charged total will be higher. The final call charges the account and is irreversible; run it only after the user explicitly approves that exact quote. Quote and purchase must run on the same machine within the ~10-minute token lifetime. Afterward, `gddy shopping order get <order-id>` shows the total charged.
 
 ## DNS workflows
 
@@ -87,7 +93,19 @@ gddy dns set example.com --type TXT --name @ --data "v=spf1 -all"
 gddy dns delete example.com --type A --name www
 ```
 
-Valid types are `A AAAA ALIAS CAA CNAME MX NS SOA SRV TXT`; `NS` and `SOA` are read-only. `add` appends and can duplicate on retry. `set` replaces all values for the type+name and is not atomic. `delete` removes all matching values. Before `set` or `delete`, list existing records, run the mutation with `--dry-run`, show the plan, obtain explicit approval, execute, then list again to verify. Read `references/safety.md` for conflicts and recovery.
+Writable types are `A AAAA ALIAS CAA CNAME HTTPS MX SRV SVCB TLSA TXT`; `NS` and `SOA` are listed but read-only. TLSA, CAA, SRV, HTTPS, and SVCB take extra fields (`--usage/--selector/--matching-type`, `--flag/--tag`, `--service/--protocol/--port/--weight/--priority`, `--parameters`); check `gddy dns add --help`. `add` appends and can duplicate on retry. `set` replaces all values for the type+name and is not atomic. `delete` removes all matching values. Before `set` or `delete`, list existing records, run the mutation with `--dry-run`, show the plan, obtain explicit approval, execute, then list again to verify. Read `references/safety.md` for conflicts and recovery.
+
+## Hosting, Email, and Shopping
+
+These groups are generally available. Start with the built-in guide for each:
+
+```bash
+gddy guide hosting
+gddy guide email
+gddy guide shopping
+```
+
+`gddy hosting` deploys Node.js apps: create (async) → upload a zip to PREVIEW → verify → attach a subscription → `deployment publish` to production. `gddy email` lists, inspects, checks eligibility for, and creates mailboxes. `gddy shopping` searches the product catalog, creates and completes checkout sessions, and reads orders. `shopping checkout complete` places a paid order: show the session's final total including fees and every required agreement's title and link, and get explicit approval before `--agree`. See `references/agent-platform.md` for details and the staged `db`, `malware`, and Platform features.
 
 ## Generic API calls
 

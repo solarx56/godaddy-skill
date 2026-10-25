@@ -17,9 +17,17 @@ Approval for one domain, DNS record, quote, API operation, or environment does n
 
 ## Domain registration
 
-Use `gddy guide domain-purchase`. Quote first and show domain, price, currency, period, renewal price, auto-renew/privacy/nameservers, contacts, legal agreements, and expiry. The purchase must use the reviewed cached quote on the same machine. Never add `--agree --confirm` until the user approves that exact quote.
+Use `gddy guide domain-purchase`. Quote first and show domain, price including any premium fee, currency, period, renewal price, auto-renew/privacy/nameservers, contacts, each legal agreement's title and link, and expiry. Say plainly that taxes and fees such as the ICANN fee are added at purchase. Default contacts can be overridden in a `contacts.toml` scaffolded by `gddy domain contact init`; show which contacts the quote will use. The purchase must use the reviewed cached quote on the same machine. Never add `--agree --confirm` until the user approves that exact quote.
 
 If the call becomes ambiguous, check account domains and the returned operation. Do not request a new quote or start another purchase merely because the client timed out.
+
+## Domain settings
+
+`domain nameserver set` replaces every nameserver and moves DNS authority; save the current set first. `domain auto-renew set --disable` can let a domain expire; `--enable` authorizes future charges to the payment method on file. `domain transfer-lock set --disable` removes registrar protection against unauthorized transfers, so confirm the user intends an outbound transfer. All three are asynchronous: poll `domain operation status`, then re-read the domain.
+
+## Shopping checkout
+
+Creating or updating a checkout session is free; `shopping checkout complete` charges the account. Show the session's final total including fees, each required agreement's title and link, and important links, then get explicit approval for that session before `--agree`. Verify with `shopping order get`. Never re-complete a checkout after an ambiguous timeout without checking orders.
 
 ## DNS
 

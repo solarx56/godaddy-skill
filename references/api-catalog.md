@@ -23,7 +23,7 @@ gddy api response get <status> --operation <operation-id>
 gddy api schema get <schema>
 ```
 
-Use each command's `--help` because identifiers and options are discoverable from the installed release.
+Use each command's `--help` because identifiers and options are discoverable from the installed release. Operations marked private upstream are not listed, so an absent operation may still exist in GoDaddy's public reference docs.
 
 ## REST calls
 
@@ -37,7 +37,7 @@ gddy api call /documented/path --method GET --param name=value
 
 - `--param` routes known values to path, query, header, or body using the operation schema.
 - `--file` loads JSON and takes precedence over `--body`.
-- `--field` merges a body field.
+- `--field` merges a body field; `--field` and `--param` are rejected when the request body is not an object, so use `--file` for array or scalar bodies.
 - `--header` adds a documented header; never put credentials on the command line.
 - `--include` returns response headers, useful for request IDs and rate limits.
 - `--dry-run` previews mutations without executing.

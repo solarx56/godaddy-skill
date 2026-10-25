@@ -1,17 +1,20 @@
 # GoDaddy CLI, MCP, and agent platform
 
-Verified 2026-09-05 using the checksum-verified official gddy v0.2.12 release, its default and experimental command trees, API catalog, and the public Domains MCP handshake. Re-run discovery when using a newer release. Coverage here means workflow guidance, not that every product is enabled on the user's account.
+Verified 2026-10-25 using the checksum-verified official gddy v0.2.32 release, its default and staged command trees, built-in guides, API catalog, and the public Domains MCP documentation. Re-run discovery when using a newer release. Coverage here means workflow guidance, not that every product is enabled on the user's account.
 
 ## Select the surface
 
 | Task | Surface |
 | --- | --- |
 | Public domain search and availability | Public Domains MCP, or gddy domain |
-| Account domains, quotes, purchase, DNS, nameservers | Authenticated gddy domain / dns |
+| Account domains, quotes, purchase, DNS, nameservers, auto-renew, transfer lock | Authenticated gddy domain / dns |
+| Buy GoDaddy products (hosting plans, email), review orders | gddy shopping |
 | Commerce stores, catalogs, orders, payments, taxes, subscriptions | gddy api REST/GraphQL catalog; inspect operation scopes and schemas |
-| Node.js apps, source, jobs, deployments, secrets, logs | Beta gddy hosting nodejs |
-| Mailbox list/get/create/eligibility | Beta gddy email |
-| Platform apps, extensions, actions, subscriptions, releases | Experimental gddy platform |
+| Node.js apps, source, deployments, secrets, logs, domains, plans | gddy hosting |
+| Mailbox list/get/create/eligibility | gddy email |
+| MySQL access to a Node.js or Managed WordPress app | Experimental gddy db tunnel |
+| On-demand URL/domain malware and reputation scan | Beta gddy malware scan run |
+| Platform apps, extensions, actions, subscriptions, releases | gddy platform |
 | Agent identity, discovery, verification, certificates, events | ANS official REST reference and SDKs |
 
 ## Official agent integrations
@@ -31,13 +34,13 @@ claude plugin marketplace add godaddy/cli
 claude plugin install gddy@godaddy
 ```
 
-These are optional host installations. Choose the user's actual agent and inspect installer help before changing host configuration. The older TypeScript `godaddy` CLI lives on the repository's `original` branch; do not mix its command syntax with gddy.
+These are optional host installations. Choose the user's actual agent and inspect installer help before changing host configuration. CI workflows can use the official `godaddy/cli/action` GitHub Action to install gddy. The older TypeScript `godaddy` CLI lives on the repository's `original` branch; do not mix its command syntax with gddy.
 
 ## Public Domains MCP
 
 Documentation: https://developer.godaddy.com/en/docs/api-users/mcp
 
-Configure the host's Streamable HTTP MCP connection using this documented example; adapt transport syntax to that host:
+Claude Desktop can add it from Settings → Connectors → Browse connectors → GoDaddy. For other hosts, configure a Streamable HTTP MCP connection using this documented example; adapt transport syntax to that host:
 
 ```json
 {
@@ -52,7 +55,7 @@ Configure the host's Streamable HTTP MCP connection using this documented exampl
 
 No authentication is needed or accepted for account access. Initialize the connection and discover tools with tools/list; inspect their actual input schemas. The server is read-only public discovery, not DNS editing, purchase, transfer, or account administration. Route those operations to gddy. Recheck availability before buying.
 
-The former godaddy/ai and godaddy/commerce-agent-plugin GitHub URLs returned 404 during this release audit. Do not install them or infer a working Commerce MCP endpoint from stale search snippets. Use the current authenticated Commerce CLI/API catalog until an accessible official MCP contract is verified.
+The former godaddy/ai and godaddy/commerce-agent-plugin GitHub URLs still returned 404 on 2026-10-25. Do not install them or infer a working Commerce MCP endpoint from stale search snippets. Use the current authenticated Commerce CLI/API catalog until an accessible official MCP contract is verified.
 
 ## Complete CLI discovery, including staged features
 
@@ -68,28 +71,65 @@ GDDY_MIN_STAGE=experimental gddy tree
 
 Use the minimum stage required by the requested feature and keep the environment variable scoped to that command. Stage visibility does not grant account access. Inspect command --help before execution; a listed command is not proof the remote service is enabled.
 
-The v0.2.12 tree covers auth, API/schema/GraphQL discovery and calls, DNS, domains, environments, PATs, payment setup, updates, flags, guides, search, and completion. Beta adds Email and Hosting; experimental adds Platform.
+The v0.2.32 default tree covers auth, API/schema/GraphQL discovery and calls, DNS, domains, Email, Hosting, Shopping, environments, PATs, payment methods, Platform, updates, flags, guides, search, and completion. Beta adds `malware`; experimental adds `db` and Platform native Android extensions (`native-apps` flag). Plural aliases such as `domain nameservers` still resolve, but the canonical nouns are singular.
 
-### Hosting and Email
-
-```bash
-GDDY_MIN_STAGE=beta gddy hosting nodejs --help
-GDDY_MIN_STAGE=beta gddy email --help
-```
-
-Hosting groups: app list/get/create/update/delete; creation job get; source upload/status and git/git-status; GitHub status/repos/branches; deployment list/publish; secrets list/update; status and logs. Follow create → poll job → upload/import → poll source → inspect preview → publish when requested → verify live status. Keep secret values out of output. Preserve preview versus live distinction.
-
-Email supports list, get, create, and check-eligibility. Inspect eligibility and the creation contract before provisioning a mailbox; confirm any price/account effect from the current response.
-
-### Platform apps (experimental)
+### Hosting
 
 ```bash
-GDDY_MIN_STAGE=experimental gddy platform app --help
-GDDY_MIN_STAGE=experimental gddy platform actions --help
-GDDY_MIN_STAGE=experimental gddy platform webhook --help
+gddy guide hosting
+gddy hosting --help
 ```
 
-App commands cover init, list, info, update, local config validate, remote validate, enable/disable, archive, release, and deploy. Manifest additions include embed/checkout/blocks extensions, actions, webhook subscriptions, and settings. Discover action contracts with actions list/describe and event types with webhook events. Validate godaddy.toml locally and remote state before releasing; inspect deploy progress and resulting state. Do not equate local manifest edits with a deployed or store-enabled app.
+Groups: `app` list/get/create/update/delete/status/restart; `deployment` list/get/publish; `source` upload/status/github; `secret` list/create/update/delete/sync; `log list`; `runtime get`; `domain` list/get/attach/detach; `subscription` list/get/attach; `operation get`.
+
+Flow: `app create --app-type NODEJS` → poll `operation get` → `source upload --file app.zip` (lands on PREVIEW) → poll `source status` → verify the preview → `subscription attach` → `deployment publish` (PUBLISH/production) → verify live status. The zip needs a top-level `package.json` with name, version, main, `build` and `start` scripts, runtime packages in `dependencies`, and must listen on `process.env.PORT`; exclude `node_modules`. If no plan exists, buy one through `gddy shopping` with the user's approval. `app delete` needs a sensitive scope and is irreversible. Keep secret values out of output and preserve the preview versus live distinction.
+
+### Email
+
+`gddy guide email`; commands are list, get, create, and check-eligibility. Check eligibility first; if a mailbox needs a plan, the guide routes purchase through `gddy shopping`. Confirm any price/account effect from the current response.
+
+### Shopping
+
+```bash
+gddy guide shopping
+gddy shopping catalog category
+gddy shopping catalog search <query>
+gddy shopping catalog get <product-id>
+gddy shopping checkout create --help
+gddy shopping checkout get <checkout-id>
+gddy shopping checkout complete <checkout-id>
+gddy shopping order get <order-id>
+```
+
+Creating or updating a checkout session does not charge. `checkout complete` places a paid order with the selected saved payment method (`--payment-instrument` to choose another); `--agree` accepts every required agreement. Before completing, show the final total including fees, each agreement's title and link, and the important links, then obtain explicit approval for that session. Add a payment method with `gddy payment-method add` (opens the browser).
+
+### Database tunnel (experimental)
+
+```bash
+GDDY_MIN_STAGE=experimental gddy db tunnel --app-id <id> --product nodejs|mhwp
+```
+
+Opens a local MySQL port forwarded over the app agent's WebSocket. It needs the sensitive `hosting.database.tunnel:execute` scope, runs until interrupted, and never handles database credentials; the user logs in with their own DB user and should connect with TLS required. A Managed WordPress site allows one tunnel at a time and may take minutes to open. Run it as a background process and stop it when done.
+
+### Malware scan (beta)
+
+```bash
+GDDY_MIN_STAGE=beta gddy malware scan run https://example.com
+```
+
+Returns malware detection, blocklist reputation, software fingerprinting, security headers, and TLS health synchronously. Scan only sites the user owns or is authorized to assess.
+
+### Platform apps
+
+```bash
+gddy guide platform-overview
+gddy guide platform-settings
+gddy platform app --help
+gddy platform action --help
+gddy platform webhook --help
+```
+
+App commands cover init, import (pull an existing app's config and webhook subscriptions into godaddy.toml), list, info, update, local `config validate`, remote validate, enable/disable on a store, enablement (apps enabled on a store), archive, release, and deploy. Manifest additions include embed/checkout/blocks extensions, actions, webhook subscriptions, settings placements, and OAuth redirect URIs. Discover action contracts with `action list/describe` and event types with `webhook event`. Validate godaddy.toml locally and remote state before releasing; inspect deploy progress and resulting state. Do not equate local manifest edits with a deployed or store-enabled app.
 
 ## Agent Name Service (ANS)
 
@@ -99,4 +139,4 @@ ANS concerns agent names, identity certificates, domain ownership, discovery, an
 
 ## Coverage limits
 
-The CLI catalog currently exposes 22 API domains including Commerce and Hosting, but it is not every GoDaddy REST API. For Certificates, Aftermarket, Shoppers, Agreements, Countries, Abuse, Parking, or ANS absent from that catalog, open https://developer.godaddy.com/en/docs/references/rest and inspect the exact current contract. An empty CLI search is not proof the product has no API. Do not invent paths or reuse the obsolete custom MCP server from skill v1.
+The v0.2.32 CLI catalog exposes 24 API domains, including Commerce, Hosting, Email, Bulk Operations, and App Registry, but it is not every GoDaddy REST API. For Certificates, Aftermarket, Shoppers, Agreements, Countries, Abuse, Parking, or ANS absent from that catalog, open https://developer.godaddy.com/en/docs/references/rest and inspect the exact current contract. An empty CLI search is not proof the product has no API. Do not invent paths or reuse the obsolete custom MCP server from skill v1.

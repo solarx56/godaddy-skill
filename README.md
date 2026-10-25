@@ -2,7 +2,7 @@
 
 An agent skill for GoDaddy's current developer platform, built around the official `gddy` CLI for dynamic REST and GraphQL discovery, domains, registration, nameservers, DNS, authentication, and account operations.
 
-Version 2.0.0 also documents the public Domains MCP, official agent integrations, beta Hosting and Email, experimental Platform apps/actions/webhooks/extensions, and Agent Name Service. Verified against gddy v0.2.12 on September 5, 2026. See [coverage and setup](references/agent-platform.md), including current availability limits. The skill supplies instructions; CLI installation and MCP connection setup are separate host operations.
+Version 2.1.0 tracks gddy v0.2.32 (verified October 25, 2026): generally available Hosting, Email, and Shopping commands; domain auto-renew and transfer-lock settings; HTTPS, SVCB, and TLSA DNS records; scope-bundle login with sensitive step-up; and the staged `db tunnel` and `malware scan` commands. It also documents the public Domains MCP, official agent integrations, Platform apps/actions/webhooks/extensions, and Agent Name Service. See [coverage and setup](references/agent-platform.md), including current availability limits. The skill supplies instructions; CLI installation and MCP connection setup are separate host operations.
 
 ## ClawHub
 
